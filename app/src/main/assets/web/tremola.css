@@ -21,10 +21,16 @@ table {
     border-spacing: 0px;
 }
 
+.gameTable{
+    border: 7px solid black;
+}
+
 button {
     border-radius: 5px;
 }
 
+.gameWelcomeBanner1{color: darkblue}
+.gameWelcomeBanner2{color: darkolivegreen}
 .active {
     background-color: var(--active);
 }

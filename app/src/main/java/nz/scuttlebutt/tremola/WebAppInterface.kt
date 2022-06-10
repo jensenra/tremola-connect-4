@@ -9,6 +9,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.Toast
 import com.google.zxing.integration.android.IntentIntegrator
+import nz.scuttlebutt.tremola.ssb.Game
 import nz.scuttlebutt.tremola.ssb.TremolaState
 import nz.scuttlebutt.tremola.ssb.db.entities.LogEntry
 import nz.scuttlebutt.tremola.ssb.db.entities.Pub
@@ -24,7 +25,19 @@ import java.util.concurrent.Executors
 // pt 3 in https://betterprogramming.pub/5-android-webview-secrets-you-probably-didnt-know-b23f8a8b5a0c
 
 class WebAppInterface(private val act: Activity, val tremolaState: TremolaState, private val webView: WebView) {
+    private val me = addBackslash(tremolaState.idStore.identity.toRef())
 
+    private fun addBackslash(s: String): String {
+        val arr = s.split("/")
+        var sol = ""
+        for (el in arr){
+            sol += "$el\\/"
+        }
+        return sol.removeSuffix("\\/")
+    }
+
+    private var to = mutableListOf<String>()
+    private var from = mutableListOf<String>()
     /**
      * Receives commands from the GUI.
      * Note that there is no counterpart to this method in webView, {@see WebAppInterface::eval}
@@ -35,8 +48,55 @@ class WebAppInterface(private val act: Activity, val tremolaState: TremolaState,
         Log.d("FrontendRequest", s)
         val args = s.split(" ")
         when (args[0]) {
+            "removeGame" -> {
+                if((act as MainActivity).game != null)
+                    act.game = null
+            }
+            "startGame" -> {
+                eval("wait_on_Game()")
+                val rawStr = tremolaState.msgTypes.mkGamePost(
+                    "/ed25519-start: "+args[1]+" "+args[2],
+                    listOf(args[2])
+                )
+                val evnt = tremolaState.msgTypes.jsonToLogEntry(
+                    rawStr,
+                    rawStr.encodeToByteArray()
+                )
+                evnt?.let { rx_event(it) } // persist it, propagate horizontally and also up
+
+                if (evnt != null) {
+                    val ps = evnt.pri.toString().split(" ")
+                    val strng = ps[2].split("\"")[0]
+                    if(!to.contains(strng)) {
+                        to.add(strng)
+                        checkConnectionOrder("to", strng)
+                    }
+                }
+            }
+
+            "gameProtocol" -> {
+                // args[1] : string with method name
+                // args[2] : string with method parameters (comma separated)
+                act as MainActivity
+                val addr = act.game?.peer_addr().toString()
+                val str = "/ged25519-prot: "+args[1]+" "+args[2]+" "+addr
+                val rawStr = tremolaState.msgTypes.mkGamePost(
+                    str,
+                    listOf(addr)
+                )
+                val evnt = tremolaState.msgTypes.jsonToLogEntry(
+                    rawStr,
+                    rawStr.encodeToByteArray()
+                )
+
+                evnt?.let { rx_event(it) } // persist it, propagate horizontally and also up
+            }
+
             "onBackPressed" -> { // When 'back' is pressed, will close app
                 (act as MainActivity)._onBackPressed()
+            }
+            "game: ui" -> {
+                eval("set_game_counter(\"${args[1]}\")")
             }
             "ready" -> { // Initialisation, send localID to frontend
                 eval("b2f_initialize(\"${tremolaState.idStore.identity.toRef()}\")")
@@ -235,6 +295,41 @@ class WebAppInterface(private val act: Activity, val tremolaState: TremolaState,
         tremolaState.addLogEntry(entry)       // persist the log entry
         sendEventToFrontend(entry)            // notify the local app
         tremolaState.peers.newLogEntry(entry) // stream it to peers we are currently connected to
+        if(entry.pri?.startsWith("{\"type\":\"game\"") == true)
+            checkGameEntries(entry)
+    }
+
+    private fun checkGameEntries(entry: LogEntry) {
+        if(entry.pri?.removePrefix("{\"type\":\"game\",\"text\":\"\\")?.startsWith("/ged25519-prot: ") == true){
+            val args = entry.pri?.split(" ")
+            val addr = args?.get(3)?.split("\"")?.get(0)?.let { removeRedundantBackslashes(it) } //addr : receiver
+            if(addr == (act as MainActivity).game?.own_addr()) {
+                if(args?.get(2)  == ",")
+                    eval(args[1] +"()")
+                else {
+                    val str = (args?.get(1)) +"("+ (args?.get(2)) +")"
+                    eval(str)
+                }
+            }
+        }
+        if(entry.pri?.removePrefix("{\"type\":\"game\",\"text\":\"\\")?.startsWith("/ed25519-start: ")  == true){
+            val args = entry.pri?.split(" ") // args[1] : sender
+            val strng = args?.get(2)?.split("\"")?.get(0) // strng : receiver
+            if(strng == me && !from.contains(args[1])) {
+                args[1].let { from.add(it) }
+                checkConnectionOrder("from", args[1])
+            }
+        }
+    }
+
+    private fun removeRedundantBackslashes(strng: String): String {
+        var args = strng.split("/")
+        var l = args.size - 1
+        var sol = ""
+        for(i in 0..l) {
+            sol += args[i].trimEnd('\\') + "\\/"
+        }
+        return sol.removeSuffix("\\/")
     }
 
     fun sendEventToFrontend(evnt: LogEntry) {
@@ -251,5 +346,24 @@ class WebAppInterface(private val act: Activity, val tremolaState: TremolaState,
         cmd += "});"
         Log.d("CMD", cmd)
         eval(cmd)
+    }
+
+    private fun checkConnectionOrder(order : String?, addr : String?) {
+        act as MainActivity
+        if(order == "to" && from.contains(addr)){
+            if(act.game == null)
+                act.game = Game(me,addr)
+            act.game!!.first(false)
+        }else if(order == "from" && to.contains(addr)){
+            if(act.game == null)
+                act.game = Game(me,addr)
+            act.game!!.first(true)
+        }else return
+        to = mutableListOf()
+        from = mutableListOf()
+        if(act.game!!.is_first())
+            eval("game_window(true)")
+        else
+            eval("game_window(false)")
     }
 }

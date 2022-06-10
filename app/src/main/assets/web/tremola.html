@@ -430,19 +430,257 @@
         </div>
     </div>
 
-    <!--table id='game:ui' style="display: none;height: calc(100% - 60pt); width: calc(100% - 60pt); margin: 30pt;">
+    <table id='game:init' style="display: none;height: calc(100% - 60pt); width: calc(100% - 60pt); margin: 30pt;">
         <tr>
-            <td id="game:counter"
-                style="width: 100%; text-align: center; color: rgba(196,0,0,1); font-size: xxx-large;">
-                1
+            <td id="game:welcome"
+                style="margin-top: 0; width: 100%; text-align: center; font-size: 30px;">
+                <h2 class="gameWelcomeBanner1">Welcome to Connect-4</h2>
+            </td>
+        </tr >
+        <tr>
+            <td id="game:welcome2"
+                style="margin-top: 40px; width: 100%; text-align: center; font-size: 20px;">
+                <h3 class="gameWelcomeBanner2">UFO edition</h3>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:initb" class="flat passive" onclick="c_list();"
+                        style="vertical-align: top; font-size: larger; height: 50px; width: 100%; margin: 8px; vertical-align: top">
+                    See Contact List
+                </button>
+            </th>
+        </tr>
+    </table>
+
+    <table id='game:wait' style="display: none;height: calc(100% - 60pt); width: calc(100% - 60pt);margin-left: calc(13%); margin-top: calc(77%);">
+        <tr>
+            <td id="game:waiter"
+                style="vertical-align: top; width: 100%; text-align: center; color: rgba(196,0,0,1); font-size: 10px;">
+                <h1>Waiting for other player to connect...</h1>
             </td>
         <tr>
-            <td style="vertical-align: top">
-                <button class="flat passive" onclick="increment();"
-                        style="font-size: medium; height: 50px; width: calc(100% - 16px); margin: 8px; vertical-align: top">
-                    Add 1
+
+    </table>
+
+    <table id='game:ui'
+           class='gameTable'
+           style="display: none; background-color: #3F48CC; height: calc(76% - 60pt); width: calc(100% - 30pt); margin: 15pt;">
+        <tr>
+            <th>
+                <button id="game:Button1" class="flat passive" onclick="pressButton(0,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
                 </button>
-    </--table-->
+            </th>
+            <th>
+                <button id="game:Button2" class="flat passive" onclick="pressButton(0,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button3" class="flat passive" onclick="pressButton(0,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button4" class="flat passive" onclick="pressButton(0,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button5" class="flat passive" onclick="pressButton(0,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button6" class="flat passive" onclick="pressButton(0,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:Button7" class="flat passive" onclick="pressButton(1,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button8" class="flat passive" onclick="pressButton(1,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button9" class="flat passive" onclick="pressButton(1,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button10" class="flat passive" onclick="pressButton(1,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button11" class="flat passive" onclick="pressButton(1,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button12" class="flat passive" onclick="pressButton(1,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:Button13" class="flat passive" onclick="pressButton(2,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button14" class="flat passive" onclick="pressButton(2,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button15" class="flat passive" onclick="pressButton(2,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button16" class="flat passive" onclick="pressButton(2,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button17" class="flat passive" onclick="pressButton(2,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button18" class="flat passive" onclick="pressButton(2,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:Button19" class="flat passive" onclick="pressButton(3,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button20" class="flat passive" onclick="pressButton(3,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button21" class="flat passive" onclick="pressButton(3,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button22" class="flat passive" onclick="pressButton(3,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button23" class="flat passive" onclick="pressButton(3,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button24" class="flat passive" onclick="pressButton(3,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:Button25" class="flat passive" onclick="pressButton(4,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button26" class="flat passive" onclick="pressButton(4,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button27" class="flat passive" onclick="pressButton(4,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button28" class="flat passive" onclick="pressButton(4,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button29" class="flat passive" onclick="pressButton(4,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button30" class="flat passive" onclick="pressButton(4,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <button id="game:Button31" class="flat passive" onclick="pressButton(5,0,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button32" class="flat passive" onclick="pressButton(5,1,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button33" class="flat passive" onclick="pressButton(5,2,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button34" class="flat passive" onclick="pressButton(5,3,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+                </button>
+            </th>
+            <th>
+                <button id="game:Button35" class="flat passive" onclick="pressButton(5,4,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+
+                </button>
+            </th>
+            <th>
+                <button id="game:Button36" class="flat passive" onclick="pressButton(5,5,true);"
+                        style="width: 100%; background-image: url('img/project_resources/emptyDisc.png'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+
+                </button>
+            </th>
+        </tr>
+        <tr>
+            <th colspan="2">
+                <button id="Normal" class="flat passive" onclick="swapTile('Normal');"
+                        style="width: 100%; background-image: url('img/project_resources/NormalTileSelected.jpg'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+
+                </button>
+            </th>
+            <th colspan="2">
+                <button id="Bomb" class="flat passive" onclick="swapTile('Bomb');"
+                        style="width: 100%; background-image: url('img/project_resources/ExplosiveTile.jpg'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+
+                </button>
+            </th>
+            <th colspan="2">
+                <button id="Gravity" class="flat passive" onclick="swapTile('Gravity');"
+                        style="width: 100%; background-image: url('img/project_resources/GravityTile.jpg'); background-size: 100% 100%; background-position: center center; background-color: white; overflow: hidden">
+
+                </button>
+            </th>
+        </tr>
+    </table>
 </div>
 </body>
 </html>

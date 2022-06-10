@@ -15,6 +15,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import com.google.zxing.integration.android.IntentIntegrator
+import nz.scuttlebutt.tremola.ssb.Game
 import nz.scuttlebutt.tremola.ssb.TremolaState
 import nz.scuttlebutt.tremola.ssb.peering.RpcResponder
 import nz.scuttlebutt.tremola.ssb.peering.RpcServices
@@ -35,6 +36,7 @@ class MainActivity : Activity() {
     var server_socket: ServerSocket? = null
     var udp: UDPbroadcast? = null
     var lookup: Lookup? = null
+    var game: Game? = null
     val networkRequest = NetworkRequest.Builder()
         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
         .build()
@@ -54,7 +56,6 @@ class MainActivity : Activity() {
 
         // Create an SSB Identity (i.e. a private/public key pair) and print the public key
         Log.d("IDENTITY", "is ${tremolaState.idStore.identity.toRef()}")
-
         val webView = findViewById<WebView>(R.id.webView)
         tremolaState.wai = WebAppInterface(this, tremolaState, webView)
 

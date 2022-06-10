@@ -4,11 +4,20 @@
 
 let overlayIsActive = false;
 
+let amRed = false;
+
+let is_turn = false;
+
+let bombsAvailable = true;
+let gTilesAvailable = true;
+let currentTile = 0; //1 is a bomb and 2 is a gravity tile
+let currentTilePeer = 0; //1 is a bomb and 2 is a gravity tile
+
 let display_or_not = [
     'div:qr', 'div:back',
     'core', 'lst:chats', 'lst:posts', 'lst:contacts', 'lst:members', 'the:connex',
     'div:footer', 'div:textarea', 'div:confirm-members', 'plus',
-    'div:settings'
+    'div:settings', 'game:ui', 'game:init', 'game:wait'
 ];
 
 let prev_scenario = 'chats';
@@ -30,11 +39,14 @@ let scenarioDisplay = {
     'posts': ['div:back', 'core', 'lst:posts', 'div:textarea'],
     'connex': ['div:qr', 'core', 'the:connex', 'div:footer', 'plus'],
     'members': ['div:back', 'core', 'lst:members', 'div:confirm-members'],
-    'settings': ['div:back', 'div:settings']
+    'settings': ['div:back', 'div:settings'],
+    'gameStart': ['div:back', 'game:init'],
+    'gameWait': ['div:back', 'game:wait'],
+    'game': ['div:back', 'game:ui']
 }
 
 let scenarioMenu = {
-    'chats': [['New conversation', 'menu_new_conversation'],
+    'chats': [['Launch my game', 'add_game'], ['New conversation', 'menu_new_conversation'],
         ['Settings', 'menu_settings'],
         ['About', 'menu_about']],
     'contacts': [['New contact', 'menu_new_contact'],
@@ -52,6 +64,470 @@ let scenarioMenu = {
         ['About', 'menu_about']],
 
     'settings': []
+}
+
+function swapTile(string) {
+    if (currentTile === 0 && ((string === "Bomb" && bombsAvailable) || (string === "Gravity" && gTilesAvailable))) {
+        document.getElementById("Normal").style.backgroundImage = 'url(img/project_resources/NormalTile.jpg';
+    } else if (currentTile === 1) {
+        document.getElementById("Bomb").style.backgroundImage = 'url(img/project_resources/ExplosiveTile.jpg';
+    } else if (currentTile === 2) {
+        document.getElementById("Gravity").style.backgroundImage = 'url(img/project_resources/GravityTile.jpg)';
+    }
+    if (string === "Normal") {
+        currentTile = 0;
+        document.getElementById("Normal").style.backgroundImage = 'url(img/project_resources/NormalTileSelected.jpg)';
+
+    } else if (string === "Bomb" && bombsAvailable) {
+        currentTile = 1;
+        document.getElementById("Bomb").style.backgroundImage = 'url(img/project_resources/ExplosiveTileSelected.jpg)';
+    } else if (string === "Gravity" && gTilesAvailable) {
+        currentTile = 2;
+        document.getElementById("Gravity").style.backgroundImage = 'url(img/project_resources/GravityTileSelected.jpg)';
+    }
+}
+
+function c_list() {
+    const contactTextElement = document.getElementById("game:welcome2");
+    contactTextElement.textContent = "";
+    let s = document.getElementById('lst:contacts').textContent;
+    s = s.split('@');
+    let array = [];
+    for (let i = 0; i < s.length; i += 1) {
+        let splitArr = s[i].split('.ed25519');
+        for (let k = 0; k < splitArr.length; k += 1) {
+            if (!splitArr[k].endsWith('='))
+                splitArr[k] = splitArr[k].slice(1)
+            array.push(splitArr[k]);
+        }
+    }
+    array.pop()
+    array.reverse()
+    for (let i = 0; i < array.length; i += 1) {
+        if (i % 2 === 1 && i < array.length - 2) {
+            let btn = document.createElement("button");
+            btn.textContent = array[i];
+            btn.id = array[i];
+            btn.onclick = function () {
+                start_Game(array[array.length - 2], array[i - 1]);
+            };
+            contactTextElement.appendChild(btn);
+        } else {
+            array[i] = "@" + array[i] + ".ed25519"
+        }
+    }
+}
+function wait_on_Game() {
+    resetGameStartWindow()
+    setScenario("gameWait");
+}
+
+function resetGameStartWindow() {
+    let header = document.createElement("h3");
+    header.innerText = "UFO edition";
+    header.style.color = "darkolivegreen"
+    document.getElementById('game:welcome2').replaceChildren(header);
+}
+
+function start_Game(myAddress, sendAddress) {
+    //const contactTextElement = document.getElementById("game:welcome");
+    //contactTextElement.textContent=myAddress+" "+sendAddress;
+    backend("startGame " + myAddress + " " + sendAddress);
+}
+
+function add_game() {
+    closeOverlay();
+    bombsAvailable = true;
+    gTilesAvailable = true;
+    currentTile = 0;
+    reset_game();
+    setScenario('gameStart');
+}
+
+function game_window(isRed) {
+    is_turn = isRed;
+    amRed = isRed;
+    closeOverlay();
+    setScenario('game')
+    //launch_snackbar("game is started")
+}
+
+
+function end_game(s) {
+    launch_snackbar("Game over, the winner is " + s);
+    //return to main screen
+}
+
+function evaluate_winner() {
+    //top left
+    for (let x = 0; x <= 2; x++) {
+        for (let y = 0; y <= 2; y++) {
+            var truedisc = "";
+            var winner = "";
+            var yellow = "url(\"img/project_resources/yellowDisc.png\")";
+            var red = "url(\"img/project_resources/redDisc.png\")";
+            if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === yellow) {
+                truedisc = yellow;
+                winner = "yellow";
+            } else if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === red) {
+                truedisc = red;
+                winner = "red";
+            } else continue;
+            var rec_bool = [true, true, true];
+            for (let i = 1; i <= 3; i++) {
+                rec_bool[0] = rec_bool[0] && (document.getElementById('game:Button' + (6 * x + y + i + 1)).style.backgroundImage === truedisc)
+                rec_bool[1] = rec_bool[1] && (document.getElementById('game:Button' + (6 * (x + i) + y + 1)).style.backgroundImage === truedisc)
+                rec_bool[2] = rec_bool[2] && (document.getElementById('game:Button' + (7 * i + 6 * x + y + 1)).style.backgroundImage === truedisc)
+            }
+            if (rec_bool[0] || rec_bool[1] || rec_bool[2]) {
+                end_game(winner)
+                onBackPressed();
+            }
+        }
+    }
+    //top right
+    for (let x = 0; x <= 2; x++) {
+        for (let y = 3; y <= 5; y++) {
+            var truedisc = ""
+            var winner = "";
+            var yellow = "url(\"img/project_resources/yellowDisc.png\")"
+            var red = "url(\"img/project_resources/redDisc.png\")"
+            if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === yellow) {
+                truedisc = yellow;
+                winner = "yellow";
+            } else if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === red) {
+                truedisc = red;
+                winner = "red";
+            } else continue;
+            rec_bool = [true, true];
+            for (let i = 1; i <= 3; i++) {
+                rec_bool[0] = rec_bool[0] && (document.getElementById('game:Button' + (6 * (x + i) + y + 1)).style.backgroundImage === truedisc)
+                rec_bool[1] = rec_bool[1] && (document.getElementById('game:Button' + (5 * i + 6 * x + y + 1)).style.backgroundImage === truedisc)
+            }
+            if (rec_bool[0] || rec_bool[1]) {
+                end_game(winner);
+                onBackPressed();
+            }
+        }
+    }
+    //bottom left
+    for (let x = 3; x <= 5; x++) {
+        for (let y = 0; y <= 2; y++) {
+            var truedisc = "";
+            var winner = "";
+            var yellow = "url(\"img/project_resources/yellowDisc.png\")";
+            var red = "url(\"img/project_resources/redDisc.png\")";
+            if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === yellow) {
+                truedisc = yellow;
+                winner = "yellow";
+            } else if (document.getElementById('game:Button' + (6 * x + y + 1)).style.backgroundImage === red) {
+                truedisc = red;
+                winner = "red";
+            } else continue;
+            rec_bool = true;
+            for (let i = 1; i <= 3; i++) {
+                rec_bool = rec_bool && (document.getElementById('game:Button' + (6 * x + y + i + 1)).style.backgroundImage === truedisc)
+            }
+            if (rec_bool) {
+                end_game(winner);
+                onBackPressed();
+            }
+        }
+    }
+}
+
+function reset_game() {
+    for (let i = 0; i <= 5; i++) {
+        for (let j = 0; j <= 5; j++) {
+            document.getElementById('game:Button' + (6 * i + j + 1)).style.backgroundImage = "url(\"img/project_resources/emptyDisc.png\")";
+        }
+    }
+}
+
+async function pressButton(x, y, is_me) {
+    if(is_me && !is_turn){
+        launch_snackbar("Not your turn!")
+        return;
+        }
+    is_turn = !is_turn;
+    let lastValidRowIndex = -1;
+    let sleepTime = 100;
+    if ((is_me && currentTile === 0) || (!is_me && currentTilePeer === 0)) {
+        if (amRed) {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")') {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/redDisc.png)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid move!")
+                return;
+            }
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/redDisc.png)';
+        } else {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")') {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDisc.png)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn implementation?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid move!")
+                return;
+            }
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDisc.png)';
+        }
+
+    }
+    else if ((is_me && currentTile === 1) || (!is_me && currentTilePeer === 1)) {
+        if(is_me)
+            bombsAvailable = false;
+        if (amRed) {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")') {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscBomb.jpg)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn implementation?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid Move!")
+                return;
+            }
+            //explode at point
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+            //explode below
+            if (lastValidRowIndex < 5) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode above
+            if (lastValidRowIndex > 0) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode left
+            if (y < 5) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode right
+            if (y > 0) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            await sleep(50);
+            document.getElementById('game:Button' + (6 * (lastValidRowIndex) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            if (y < 5) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (y > 0) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (lastValidRowIndex < 5) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (lastValidRowIndex > 0) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            //document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/redDisc.png)';
+        } else {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")') {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscBomb.jpg)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid Move!")
+                return;
+            }
+            //explode at point
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+            //explode below
+            if (lastValidRowIndex < 5) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode above
+            if (lastValidRowIndex > 0) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode left
+            if (y < 5) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            //explode right
+            if (y > 0) {
+                if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage === 'url(img/project_resources/redDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + y + 1)).style.backgroundImage = 'url(img/project_resources/redDiscExplosion.jpg)';
+                } else if (document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage === 'url(img/project_resources/yellowDisc.png)') {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/yellowDiscExplosion.jpg)';
+                } else {
+                    document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDiscExplosion.jpg)';
+                }
+            }
+            await sleep(50);
+            document.getElementById('game:Button' + (6 * (lastValidRowIndex) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            if (y < 5) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y + 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (y > 0) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex) + (y - 1) + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (lastValidRowIndex < 5) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex + 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+            if (lastValidRowIndex > 0) {
+                document.getElementById('game:Button' + (6 * (lastValidRowIndex - 1) + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+            }
+        }
+        document.getElementById("Bomb").style.backgroundImage = 'url(img/project_resources/ExplosiveTile.jpg)';
+        //unselect explosive tile
+        document.getElementById("Normal").style.backgroundImage = 'url(img/project_resources/NormalTileSelected.jpg)';
+        // select normal tile again
+    }
+    else if ((is_me && currentTile === 2) || (!is_me && currentTilePeer === 2)) {
+        if(is_me)
+            gTilesAvailable = false;
+        if (amRed) {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")' && i <= x) {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/redDisc.png)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn implementation?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid Move!")
+                return;
+            }
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/redDisc.png)';
+        } else {
+            for (let i = 0; i <= 5; i++) {
+                if (document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage === 'url("img/project_resources/emptyDisc.png")' && i <= x) {
+                    lastValidRowIndex = i;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDisc.png)';
+                    await sleep(sleepTime);
+                    sleepTime = sleepTime - 7;
+                    document.getElementById('game:Button' + (6 * i + y + 1)).style.backgroundImage = 'url(img/project_resources/emptyDisc.png)';
+                } else {
+                    break;
+                }
+            }
+            if (lastValidRowIndex === -1) {
+                //TODO repeat turn implementation?
+                is_turn = !is_turn;
+                launch_snackbar("Invalid Move!")
+                return;
+            }
+            document.getElementById('game:Button' + (6 * lastValidRowIndex + y + 1)).style.backgroundImage = 'url(img/project_resources/yellowDisc.png)';
+        }
+        document.getElementById("Gravity").style.backgroundImage = 'url(img/project_resources/GravityTile.jpg)';
+        //unselect explosive tile
+        document.getElementById("Normal").style.backgroundImage = 'url(img/project_resources/NormalTileSelected.jpg)';
+        // select normal tile again
+    }
+    if(is_me) {
+        backend("gameProtocol peerButton " + x + "," + y + "," + currentTile);
+        currentTile = 0;
+    }
+    if(checkDraw()){ //TODO why doesnt this work?
+        onBackPressed()
+        launch_snackbar("Draw (Game board full)")
+    }
+    evaluate_winner();
+}
+function checkDraw(){
+    let continu=false;
+    for(let i=0; i<=5; i++){
+        if (document.getElementById("game:Button"+i+1).style.backgroundImage === 'url(img/project_resources/emptyDisc.png)'){
+            continu=true;
+        }
+    }
+    return !continu;
+}
+
+function peerButton(x, y, tile) {
+    currentTilePeer = tile; //set for peer
+    amRed = !amRed; //for peer
+    pressButton(x, y, false);
+    amRed = !amRed;
+  }
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function onBackPressed() {
@@ -72,6 +548,9 @@ function onBackPressed() {
         }
         setScenario(prev_scenario);
     }
+    backend("removeGame");
+    reset_game();
+    resetGameStartWindow();
 }
 
 function setScenario(new_scenario) {

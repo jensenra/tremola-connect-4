@@ -33,6 +33,10 @@ function menu_sync() {
 }
 */
 
+function set_game_counter(number) {
+    document.getElementById("game:counter").accessKeyLabel = number.toString();
+}
+
 function menu_new_conversation() {
     fill_members()
     prev_scenario = 'chats'
@@ -544,6 +548,10 @@ function backend(cmdStr) { // send this to Kotlin (or simulate in case of browse
         b2f_initialize('@AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=.ed25519')
     else if (cmdStr[0] === 'exportSecret')
         b2f_showSecret('secret_of_id_which_is@AAAA==.ed25519')
+
+    else if (cmdStr[0] === 'game:ui')
+        set_game_counter()
+
     else if (cmdStr[0] === 'priv:post') {
         var draft = atob(cmdStr[1])
         cmdStr.splice(0, 2)
